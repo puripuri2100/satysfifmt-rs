@@ -3,7 +3,7 @@ use satysfi_parser::grammar;
 use satysfi_parser::CstText;
 use satysfi_parser::LineCol;
 
-use satysfifmt::cst2str;
+use satysfifmt::{cst2str, comments};
 
 fn main() -> Result<()> {
   let satysfi_text = r#"
@@ -39,7 +39,7 @@ fn main() -> Result<()> {
     Err(e) => return make_error_message_for_csttext(e),
   };
   let char_indices = satysfi_text.char_indices();
-  let comment_lst = satysfifmt::make_comment_lst(&csttext, char_indices);
+  let comment_lst = comments::make_comment_lst(&csttext, char_indices);
   let cst = &csttext.cst;
   let asttext = &csttext.pritty_cst_recursive(cst);
   println!("{}", asttext);

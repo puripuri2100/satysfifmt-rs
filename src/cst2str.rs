@@ -5,6 +5,8 @@ use satysfi_parser::Rule::*;
 use satysfi_parser::Span;
 use thiserror::Error;
 
+use crate::comments;
+
 #[derive(Debug, PartialEq, Eq, Clone, Error, Hash)]
 pub enum ToStringError {
   #[error("unexpedted rule: {0:?}")]
@@ -162,13 +164,6 @@ x
   )
 }
 
-fn make_comments(comments: &Vec<String>) -> String {
-  if comments.len() == 0 {
-    String::new()
-  } else {
-    format!("\n% {}\n", comments.join("\n% "))
-  }
-}
 
 pub fn cst_to_string(
   cst: &Cst,
@@ -207,7 +202,7 @@ fn saty_or_satyh_to_string(
   Ok(format!(
     "{}{last_comments}",
     str,
-    last_comments = make_comments(&last_comments)
+    last_comments = comments::make_comments(&last_comments)
   ))
 }
 
@@ -219,7 +214,7 @@ fn programs_to_string(
   all_comments_lst: &Vec<Span>,
   is_saty: bool,
 ) -> Result<String> {
-  let comments_str = make_comments(comments);
+  let comments_str = comments::make_comments(comments);
   let rule = &cst.rule;
   let span = &cst.span;
   let inner = &cst.inner;
@@ -273,7 +268,7 @@ fn headers_to_string(
         match pkgname_rule {
           pkgname => {
             let pkgname_str = input.get_text_from_span(pkgname_span);
-            let require_string = format!("{}@require: {}\n", make_comments(comments), pkgname_str);
+            let require_string = format!("{}@require: {}\n", comments::make_comments(comments), pkgname_str);
             str.push_str(&require_string)
           }
           _ => {
@@ -288,7 +283,7 @@ fn headers_to_string(
         match pkgname_rule {
           pkgname => {
             let pkgname_str = input.get_text_from_span(pkgname_span);
-            let require_string = format!("{}@import: {}\n", make_comments(comments), pkgname_str);
+            let require_string = format!("{}@import: {}\n", comments::make_comments(comments), pkgname_str);
             str.push_str(&require_string)
           }
           _ => {
