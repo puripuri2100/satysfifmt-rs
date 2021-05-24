@@ -1,11 +1,9 @@
 use anyhow::Result;
-use satysfi_parser::Cst;
-use satysfi_parser::CstText;
-use satysfi_parser::Rule::*;
-use satysfi_parser::Span;
+use satysfi_parser::{Cst, CstText, Rule::*, Span};
 use thiserror::Error;
 
 use crate::comments;
+use crate::statement;
 
 #[derive(Debug, PartialEq, Eq, Clone, Error, Hash)]
 pub enum ToStringError {
@@ -104,7 +102,7 @@ x
 ";
   let csttext = CstText::parse(text, satysfi_parser::grammar::program).unwrap();
   let char_indices = text.char_indices();
-  let comments_lst = crate::make_comment_lst(&csttext, char_indices);
+  let comments_lst = comments::make_comment_lst(&csttext, char_indices);
   let inner = &csttext.cst.inner;
   assert_eq!(
     separate_comments(&csttext, &comments_lst, 0, inner).unwrap(),
@@ -164,7 +162,6 @@ x
   )
 }
 
-
 pub fn cst_to_string(
   cst: &Cst,
   index: u64,
@@ -222,10 +219,11 @@ fn programs_to_string(
     stage => stage_to_string(span, input),
     headers => headers_to_string(inner, input, all_comments_lst)?,
     preamble => {
+      let preamble_str = preamble_to_string(inner, input, all_comments_lst, index)?;
       if is_saty {
-        format!("\npreamble\nin\n")
+        format!("\n{}\n\nin\n", preamble_str)
       } else {
-        format!("\npreamble\n")
+        format!("\n{}\n", preamble_str)
       }
     }
     expr => {
@@ -268,7 +266,11 @@ fn headers_to_string(
         match pkgname_rule {
           pkgname => {
             let pkgname_str = input.get_text_from_span(pkgname_span);
-            let require_string = format!("{}@require: {}\n", comments::make_comments(comments), pkgname_str);
+            let require_string = format!(
+              "{}@require: {}\n",
+              comments::make_comments(comments),
+              pkgname_str
+            );
             str.push_str(&require_string)
           }
           _ => {
@@ -283,8 +285,50 @@ fn headers_to_string(
         match pkgname_rule {
           pkgname => {
             let pkgname_str = input.get_text_from_span(pkgname_span);
-            let require_string = format!("{}@import: {}\n", comments::make_comments(comments), pkgname_str);
+            let require_string = format!(
+              "{}@import: {}\n",
+              comments::make_comments(comments),
+              pkgname_str
+            );
             str.push_str(&require_string)
+          }
+          _ => {
+            unreachable!()
+          }
+        }
+      }
+      _ => {
+        unreachable!()
+      }
+    }
+  }
+  Ok(str)
+}
+
+fn preamble_to_string(
+  cst_list: &Vec<Cst>,
+  input: &CstText,
+  all_comments_lst: &Vec<Span>,
+  index: u64,
+) -> Result<String> {
+  let mut str = String::new();
+  let start = cst_list.get(0).map(|cst| cst.span.end).unwrap_or_else(|| 0);
+  let inner_with_comments = separate_comments(input, all_comments_lst, start, cst_list)?;
+  for (comments, cst) in inner_with_comments.iter() {
+    let rule = &cst.rule;
+    let inner = &cst.inner;
+    let comments_str = comments::make_comments(comments);
+    match rule {
+      let_stmt => {
+        let pattern_cst = &inner[0];
+        match pattern_cst.rule {
+          pattern => {
+            let s = format!(
+              "{}\n{}",
+              comments_str,
+              statement::let_stmt_to_string(inner, input, all_comments_lst, index)?
+            );
+            str.push_str(&s)
           }
           _ => {
             unreachable!()

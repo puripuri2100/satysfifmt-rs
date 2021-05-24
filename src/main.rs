@@ -3,7 +3,7 @@ use satysfi_parser::grammar;
 use satysfi_parser::CstText;
 use satysfi_parser::LineCol;
 
-use satysfifmt::{cst2str, comments};
+use satysfifmt::{comments, cst2str};
 
 fn main() -> Result<()> {
   let satysfi_text = r#"
@@ -16,7 +16,15 @@ fn main() -> Result<()> {
  @require: math
  @import: test2
 
- let x = x + 1
+ let plus-one x = x + 1
+
+let sum x y = x + y
+
+ %let-rec fib i n =
+ % if n == 0 then
+ %   i
+ % else
+ %   fib (i + n) (n - 1)
 
  in
 

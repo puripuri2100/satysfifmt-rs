@@ -25,7 +25,6 @@ pub fn make_comment_lst(csttext: &CstText, char_indices: std::str::CharIndices) 
   comment_lst
 }
 
-
 pub fn make_comments(comments: &Vec<String>) -> String {
   if comments.len() == 0 {
     String::new()
